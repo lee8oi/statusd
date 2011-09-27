@@ -13,7 +13,7 @@ namespace eval statusd {
 # GNU General Public License for more details.
 # http://www.gnu.org/licenses/
 #
-# Statusd v0.2.4 (9.27.11)
+# Statusd v0.2.3 (9.27.11)
 # by: <lee8oiAtgmail><lee8oiOnfreenode>
 # github link: https://github.com/lee8oi/statusd/blob/master/statusd.tcl
 #
@@ -62,7 +62,6 @@ namespace eval statusd {
 #  3.Added host search capability. Users can lookup which nicks match the
 #  specified hostmask. Normal tcl string matching characters apply (wildcards
 #  etc). Command usage: !status host <hostmask>
-#  4.Fixed backup issue for user hostmask information.
 # 
 # -------------------------------------------------------------------
 # Configuration:
@@ -110,7 +109,7 @@ variable statustext
 variable lastchan
 variable nickcase
 variable nickhost
-variable ver "0.2.4"
+variable ver "0.2.3"
 setudef flag statusd
 }
 bind msg n [set ::statusd::backup_trigger] ::statusd::backup_data
@@ -138,7 +137,7 @@ if {![info exists statusd_timer_running]} {
 namespace eval statusd {
    proc restore {args} {
       # restore from file
-      if {[file exists [set ::statusd::backupfile]]} {
+      if {[file exist [set ::statusd::backupfile]]} {
          source [set ::statusd::backupfile]
       }
    }
@@ -165,7 +164,6 @@ namespace eval statusd {
       variable ::statusd::lastchan
       variable ::statusd::statustime
       variable ::statusd::statustext
-      variable ::statusd::nickhost
       set fs [open [set ::statusd::backupfile] w+]
       # write variable lines for loading namespace vars.
       puts $fs "variable ::statusd::status"
@@ -173,11 +171,9 @@ namespace eval statusd {
       puts $fs "variable ::statusd::lastchan"
       puts $fs "variable ::statusd::statustime"
       puts $fs "variable ::statusd::statustext"
-      puts $fs "variable ::statusd::nickhost"
       # create 'array set' lines using array data.
-      foreach arr {status nickcase lastchan statustime statustext nickhost} {
+      foreach arr {status nickcase lastchan statustime statustext} {
          puts $fs "array set $arr [list [array get $arr]]"
-         puts $fs "testing $arr"
       }
       close $fs;
       if {[set ::statusd::logbackups]} {

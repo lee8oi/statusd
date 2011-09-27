@@ -13,7 +13,7 @@ namespace eval statusd {
 # GNU General Public License for more details.
 # http://www.gnu.org/licenses/
 #
-# Statusd v0.2.2 (8.13.11)
+# Statusd v0.2.3beta (9.27.11)
 # by: <lee8oiAtgmail><lee8oiOnfreenode>
 # github link: https://github.com/lee8oi/statusd/blob/master/statusd.tcl
 #
@@ -58,6 +58,7 @@ namespace eval statusd {
 #  2. Added new feature. If nick specified is not found script will search for 
 #  names which include the pattern. If channel arg is provided search will
 #  only look for matches in that channel.
+#  3.In the process of adding userhost related features.
 # 
 # -------------------------------------------------------------------
 # Configuration:
@@ -104,7 +105,8 @@ variable statustime
 variable statustext
 variable lastchan
 variable nickcase
-variable ver "0.2.2"
+variable userhost
+variable ver "0.2.3beta"
 setudef flag statusd
 }
 bind msg n [set ::statusd::backup_trigger] ::statusd::backup_data

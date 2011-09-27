@@ -58,7 +58,9 @@ namespace eval statusd {
 #  2. Added new feature. If nick specified is not found script will search for 
 #  names which include the pattern. If channel arg is provided search will
 #  only look for matches in that channel.
-#  3.In the process of adding userhost related features.
+#  3.Added host search capability. Users can lookup which nicks match the
+#  specified hostmask. Normal tcl string matching characters apply (wildcards
+#  etc). Command usage: !status host <hostmask>
 # 
 # -------------------------------------------------------------------
 # Configuration:
@@ -289,9 +291,13 @@ namespace eval statusd {
             set vstatus [::statusd::search_names $arg1 $arg2]
          }
          putserv "PRIVMSG $nick :$vstatus"
-      } elseif {$larg1 == "host" && $arg2 != ""} {
+      } elseif {$larg1 == "host"} {
+         if {$arg2 != ""} {
             set vstatus [::statusd::search_hosts $arg2]
-            putserv "PRIVMSG $nick :$vstatus"
+         } else {
+            set vstatus "Usage: $pubcom host <hostmask>"
+         }
+         putserv "PRIVMSG $nick :$vstatus"
       } elseif {$arg2 == "" && $arg1 != ""} {
          #no channel specified. nick only.
          if {[info exists lastchan($larg1)]} {
@@ -330,8 +336,12 @@ namespace eval statusd {
                set vstatus [::statusd::search_names $arg1 $arg2]
             }
             putserv "PRIVMSG $channel :$vstatus"
-         } elseif {$larg1 == "host" && $arg2 != ""} {
-            set vstatus [::statusd::search_hosts $arg2]
+         } elseif {$larg1 == "host"} {
+            if {$arg2 != ""} {
+               set vstatus [::statusd::search_hosts $arg2]
+            } else {
+               set vstatus "Usage: $pubcom host <hostmask>"
+            }
             putserv "PRIVMSG $channel :$vstatus"
          } elseif {$arg2 == "" && $arg1 != ""} {
             #no channel specified. nick only.

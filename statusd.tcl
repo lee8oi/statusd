@@ -105,7 +105,7 @@ variable statustime
 variable statustext
 variable lastchan
 variable nickcase
-variable userhost
+variable nickhost
 variable ver "0.2.3beta"
 setudef flag statusd
 }
@@ -216,13 +216,14 @@ namespace eval statusd {
       }
       return $result
    }
-   proc set_status {nick channel status text} {
+   proc set_status {nick userhost channel status text} {
       set lnick [string tolower $nick]
       set lchan [string tolower $channel]
       set ::statusd::status($lnick,$lchan) $status
       set ::statusd::statustext($lnick,$lchan) $text
       set ::statusd::statustime($lnick,$lchan) [clock seconds]
       set ::statusd::nickcase($lnick) $nick
+      set ::statusd::nickhost($lnick) $userhost
       set ::statusd::lastchan($lnick) $lchan
    }
    proc get_status {nick channel} {
@@ -343,40 +344,40 @@ namespace eval statusd {
          set arg1 [lindex [split $text] 0]
          if {$arg1 != [set ::statusd::trigger]} {
              # not a status request. Ok to save.
-             ::statusd::set_status $nick $channel "Spoke" $text
+             ::statusd::set_status $nick $userhost $channel "Spoke" $text
          }
       }
    }
    proc status_logger_sign {nick userhost handle channel text} {
       if {[channel get $channel statusd]} {
-         ::statusd::set_status $nick $channel "Quit" $text
+         ::statusd::set_status $nick $userhost $channel "Quit" $text
       }
    }
    proc status_logger_part {nick userhost handle channel text} {
       if {[channel get $channel statusd]} {
-         ::statusd::set_status $nick $channel "Parted" ""
+         ::statusd::set_status $nick $userhost $channel "Parted" ""
       }
    }
    proc status_logger_join {nick userhost handle channel} {
       if {[channel get $channel statusd]} {
-         ::statusd::set_status $nick $channel "Joined" ""
+         ::statusd::set_status $nick $userhost $channel "Joined" ""
       }
    }
    proc status_logger_kick {nick userhost handle channel target reason} {
       if {[channel get $channel statusd]} {
-         ::statusd::set_status $target $channel "Kicked" $reason
+         ::statusd::set_status $target "none@none" $channel "Kicked" $reason
       }
    }
    proc status_logger_nick {nick userhost handle channel newnick} {
       if {[channel get $channel statusd]} {
-         ::statusd::set_status $nick $channel "Nick Change" "to $newnick"
-         ::statusd::set_status $newnick $channel "Nick Change" "from $nick"
+         ::statusd::set_status $nick $userhost $channel "Nick Change" "to $newnick"
+         ::statusd::set_status $newnick $userhost $channel "Nick Change" "from $nick"
       }
    }
-   proc status_logger_action { nick uhost hand dest keyword text } {  
+   proc status_logger_action { nick userhost hand dest keyword text } {  
      if {[string index $dest 0] != "#"} { return 0 }        
      if {[channel get $dest statusd]} {
-         ::statusd::set_status $nick $dest "Action" $text
+         ::statusd::set_status $nick $userhost $dest "Action" $text
       }
   }
 }

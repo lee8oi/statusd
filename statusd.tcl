@@ -291,7 +291,7 @@ namespace eval statusd {
          putserv "PRIVMSG $nick :$vstatus"
       } elseif {$larg1 == "host" && $arg2 != ""} {
             set vstatus [::statusd::search_hosts $arg2]
-            putserv "PRIVMSG $channel :$vstatus"
+            putserv "PRIVMSG $nick :$vstatus"
       } elseif {$arg2 == "" && $arg1 != ""} {
          #no channel specified. nick only.
          if {[info exists lastchan($larg1)]} {

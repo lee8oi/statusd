@@ -15,7 +15,7 @@ namespace eval statusd {
 #
 # Statusd v0.2.2 (8.13.11)
 # by: <lee8oiAtgmail><lee8oiOnfreenode>
-# github link: https://github.com/lee8oi/eggdrop/blob/master/statusd.tcl
+# github link: https://github.com/lee8oi/statusd/blob/master/statusd.tcl
 #
 # Status oriented rebuild of Seend v1.8.3
 #

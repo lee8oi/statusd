@@ -217,13 +217,23 @@ namespace eval statusd {
       return $result
    }
    proc search_hosts {searchterm} {
-   variable ::statusd::nickhost
-   set hostlist [array names nickhost -regexp "${searchterm}"]
-   if { $hostlist != "" } {      
-      set result "'${searchterm}' host matches the following nicks: $hostlist"      
-   } else {
-      set result "'${searchterm}' not found."
-   }
+      variable ::statusd::nickhost
+      set namelist [array names nickhost]
+      set hostlist ""
+      set elemname ""
+      set elemval ""
+      foreach elem $namelist {
+         set elemname $elem
+         set elemval $nickhost($elem)
+         if {[string match $searchterm $elemval]} {
+            append hostlist " " $elemname 
+         }
+      }
+      if { $hostlist != "" } {      
+         set result "'${searchterm}' host matches the following nicks: $hostlist"      
+      } else {
+         set result "'${searchterm}' not found."
+      }
    return $result
    }
    proc set_status {nick userhost channel status text} {

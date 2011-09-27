@@ -13,7 +13,7 @@ namespace eval statusd {
 # GNU General Public License for more details.
 # http://www.gnu.org/licenses/
 #
-# Statusd v0.2.2 (8.13.11)
+# Statusd v0.2.3 (9.27.11)
 # by: <lee8oiAtgmail><lee8oiOnfreenode>
 # github link: https://github.com/lee8oi/statusd/blob/master/statusd.tcl
 #
@@ -21,19 +21,16 @@ namespace eval statusd {
 #
 # -------------------------------------------------------------------
 #
-# Statusd is a re-imagining of Seend script that was designed to track users
-# latest status in any channels with the correct channel flag set. Users can
-# check the status of a nick in a specific channel or check for most recent
-# activity regardless of channel. If nick specified is not found the script
-# will search for the pattern in existing names. Status checks can be done in 
-# channel or query/msg. Script also includes automatic backup system that saves 
-# on .die, restart, timed intervals, and by backup trigger in msg/query. 
+# Statusd is a reimagining of Seend script designed to track users by storing
+# thier latest activity & hostmask. Activities include joined, parted, kicked,
+# quit, nick change, and action. If name specified is not found a pattern
+# search will be performed instead and results displayed. Script also includes
+# the ability to search for nicks by hostmask using the host parameter. As well
+# as an automatic backup system that saves on .die, restart, timed intervals,
+# and by backup trigger.
 #
-# *When no channel argument is provided statusd can default to using the current 
-# channel or to use the channel with most recent activity. Applies only to
-# status checks done in channel. See configuration section below.
-#
-# Status's tracked: Joined, Parted, Kicked, Quit, Nick Change, Spoke, and Action.
+# *Configurable options include: command trigger, backup trigger, backupfile
+# location/name, backup intervals, log backups, and use current channel.
 #
 # Initial channel setup:
 # (starts logging and enables public status command. Run in partyline.)
@@ -41,6 +38,7 @@ namespace eval statusd {
 #
 # Public command syntax:
 # !status <nick> ?channel?
+# !status host <hostmask>
 #
 # Example Usage:
 # (public)
@@ -49,6 +47,9 @@ namespace eval statusd {
 # I thought it was a great idea so I got started.
 # <lee8oi> !status lee8oi #dukelovett2
 # <dukelovett> lee8oi joined #dukelovett2 5 minutes 59 seconds ago.
+# <lee8oi> !status host *lee*
+# <dukelovett> *lee* host matches the following nicks: lee8oi
+# 
 #
 # Thanks: drsprite. This script was concieved from your suggestions & comments.
 #
@@ -58,6 +59,9 @@ namespace eval statusd {
 #  2. Added new feature. If nick specified is not found script will search for 
 #  names which include the pattern. If channel arg is provided search will
 #  only look for matches in that channel.
+#  3.Added host search capability. Users can lookup which nicks match the
+#  specified hostmask. Normal tcl string matching characters apply (wildcards
+#  etc). Command usage: !status host <hostmask>
 # 
 # -------------------------------------------------------------------
 # Configuration:
@@ -104,7 +108,8 @@ variable statustime
 variable statustext
 variable lastchan
 variable nickcase
-variable ver "0.2.2"
+variable nickhost
+variable ver "0.2.3"
 setudef flag statusd
 }
 bind msg n [set ::statusd::backup_trigger] ::statusd::backup_data
@@ -214,13 +219,34 @@ namespace eval statusd {
       }
       return $result
    }
-   proc set_status {nick channel status text} {
+   proc search_hosts {searchterm} {
+      variable ::statusd::nickhost
+      set namelist [array names nickhost]
+      set hostlist ""
+      set elemname ""
+      set elemval ""
+      foreach elem $namelist {
+         set elemname $elem
+         set elemval $nickhost($elem)
+         if {[string match $searchterm $elemval]} {
+            append hostlist " " $elemname 
+         }
+      }
+      if { $hostlist != "" } {      
+         set result "'${searchterm}' host matches the following nicks:$hostlist"      
+      } else {
+         set result "'${searchterm}' not found."
+      }
+   return $result
+   }
+   proc set_status {nick userhost channel status text} {
       set lnick [string tolower $nick]
       set lchan [string tolower $channel]
       set ::statusd::status($lnick,$lchan) $status
       set ::statusd::statustext($lnick,$lchan) $text
       set ::statusd::statustime($lnick,$lchan) [clock seconds]
       set ::statusd::nickcase($lnick) $nick
+      set ::statusd::nickhost($lnick) $userhost
       set ::statusd::lastchan($lnick) $lchan
    }
    proc get_status {nick channel} {
@@ -266,6 +292,14 @@ namespace eval statusd {
             set vstatus [::statusd::search_names $arg1 $arg2]
          }
          putserv "PRIVMSG $nick :$vstatus"
+      } elseif {$larg1 == "host"} {
+         if {$arg2 != ""} {
+            set vstatus [::statusd::search_hosts $arg2]
+         } else {
+            set pubcom [set ::statusd::trigger]
+            set vstatus "Usage: $pubcom host <hostmask>"
+         }
+         putserv "PRIVMSG $nick :$vstatus"
       } elseif {$arg2 == "" && $arg1 != ""} {
          #no channel specified. nick only.
          if {[info exists lastchan($larg1)]} {
@@ -302,6 +336,14 @@ namespace eval statusd {
             } else {
                #fall back to pattern search.
                set vstatus [::statusd::search_names $arg1 $arg2]
+            }
+            putserv "PRIVMSG $channel :$vstatus"
+         } elseif {$larg1 == "host"} {
+            if {$arg2 != ""} {
+               set vstatus [::statusd::search_hosts $arg2]
+            } else {
+               set pubcom [set ::statusd::trigger]
+               set vstatus "Usage: $pubcom host <hostmask>"
             }
             putserv "PRIVMSG $channel :$vstatus"
          } elseif {$arg2 == "" && $arg1 != ""} {
@@ -341,40 +383,40 @@ namespace eval statusd {
          set arg1 [lindex [split $text] 0]
          if {$arg1 != [set ::statusd::trigger]} {
              # not a status request. Ok to save.
-             ::statusd::set_status $nick $channel "Spoke" $text
+             ::statusd::set_status $nick $userhost $channel "Spoke" $text
          }
       }
    }
    proc status_logger_sign {nick userhost handle channel text} {
       if {[channel get $channel statusd]} {
-         ::statusd::set_status $nick $channel "Quit" $text
+         ::statusd::set_status $nick $userhost $channel "Quit" $text
       }
    }
    proc status_logger_part {nick userhost handle channel text} {
       if {[channel get $channel statusd]} {
-         ::statusd::set_status $nick $channel "Parted" ""
+         ::statusd::set_status $nick $userhost $channel "Parted" ""
       }
    }
    proc status_logger_join {nick userhost handle channel} {
       if {[channel get $channel statusd]} {
-         ::statusd::set_status $nick $channel "Joined" ""
+         ::statusd::set_status $nick $userhost $channel "Joined" ""
       }
    }
    proc status_logger_kick {nick userhost handle channel target reason} {
       if {[channel get $channel statusd]} {
-         ::statusd::set_status $target $channel "Kicked" $reason
+         ::statusd::set_status $target "none@none" $channel "Kicked" $reason
       }
    }
    proc status_logger_nick {nick userhost handle channel newnick} {
       if {[channel get $channel statusd]} {
-         ::statusd::set_status $nick $channel "Nick Change" "to $newnick"
-         ::statusd::set_status $newnick $channel "Nick Change" "from $nick"
+         ::statusd::set_status $nick $userhost $channel "Nick Change" "to $newnick"
+         ::statusd::set_status $newnick $userhost $channel "Nick Change" "from $nick"
       }
    }
-   proc status_logger_action { nick uhost hand dest keyword text } {  
+   proc status_logger_action { nick userhost hand dest keyword text } {  
      if {[string index $dest 0] != "#"} { return 0 }        
      if {[channel get $dest statusd]} {
-         ::statusd::set_status $nick $dest "Action" $text
+         ::statusd::set_status $nick $userhost $dest "Action" $text
       }
   }
 }

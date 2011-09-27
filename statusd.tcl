@@ -138,7 +138,7 @@ if {![info exists statusd_timer_running]} {
 namespace eval statusd {
    proc restore {args} {
       # restore from file
-      if {[file exist [set ::statusd::backupfile]]} {
+      if {[file exists [set ::statusd::backupfile]]} {
          source [set ::statusd::backupfile]
       }
    }

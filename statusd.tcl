@@ -218,7 +218,7 @@ namespace eval statusd {
    }
    proc search_hosts {searchterm} {
    variable ::statusd::nickhost
-   set hostlist [array names nickhost "${searchterm}"]
+   set hostlist [array names nickhost -regexp "${searchterm}"]
    if { $hostlist != "" } {      
       set result "'${searchterm}' host matches the following nicks: $hostlist"      
    } else {

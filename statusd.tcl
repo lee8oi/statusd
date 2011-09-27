@@ -168,15 +168,16 @@ namespace eval statusd {
       variable ::statusd::nickhost
       set fs [open [set ::statusd::backupfile] w+]
       # write variable lines for loading namespace vars.
-      puts $fs "variable ::statusd::status"
-      puts $fs "variable ::statusd::nickcase"
-      puts $fs "variable ::statusd::lastchan"
-      puts $fs "variable ::statusd::statustime"
-      puts $fs "variable ::statusd::statustext"
-      puts $fs "variable ::statusd::nickhost"
+      #puts $fs "variable ::statusd::status"
+      #puts $fs "variable ::statusd::nickcase"
+      #puts $fs "variable ::statusd::lastchan"
+      #puts $fs "variable ::statusd::statustime"
+      #puts $fs "variable ::statusd::statustext"
+      #puts $fs "variable ::statusd::nickhost"
       # create 'array set' lines using array data.
       foreach i {status nickcase lastchan statustime statustext nickhost} {
-         puts $fs "array set $i [list [array get ::statusd::${i}]]"
+         puts $fs "variable ::statusd::${i}"
+         puts $fs "array set $i [list [array get $i]]"
       }
       close $fs;
       if {[set ::statusd::logbackups]} {

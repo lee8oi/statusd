@@ -295,6 +295,7 @@ namespace eval statusd {
          if {$arg2 != ""} {
             set vstatus [::statusd::search_hosts $arg2]
          } else {
+            set pubcom [set ::statusd::trigger]
             set vstatus "Usage: $pubcom host <hostmask>"
          }
          putserv "PRIVMSG $nick :$vstatus"
@@ -340,6 +341,7 @@ namespace eval statusd {
             if {$arg2 != ""} {
                set vstatus [::statusd::search_hosts $arg2]
             } else {
+               set pubcom [set ::statusd::trigger]
                set vstatus "Usage: $pubcom host <hostmask>"
             }
             putserv "PRIVMSG $channel :$vstatus"

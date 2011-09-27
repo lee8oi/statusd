@@ -13,7 +13,7 @@ namespace eval statusd {
 # GNU General Public License for more details.
 # http://www.gnu.org/licenses/
 #
-# Statusd v0.2.3beta (9.27.11)
+# Statusd v0.2.3 (9.27.11)
 # by: <lee8oiAtgmail><lee8oiOnfreenode>
 # github link: https://github.com/lee8oi/statusd/blob/master/statusd.tcl
 #
@@ -21,19 +21,16 @@ namespace eval statusd {
 #
 # -------------------------------------------------------------------
 #
-# Statusd is a re-imagining of Seend script that was designed to track users
-# latest status in any channels with the correct channel flag set. Users can
-# check the status of a nick in a specific channel or check for most recent
-# activity regardless of channel. If nick specified is not found the script
-# will search for the pattern in existing names. Status checks can be done in 
-# channel or query/msg. Script also includes automatic backup system that saves 
-# on .die, restart, timed intervals, and by backup trigger in msg/query. 
+# Statusd is a reimagining of Seend script designed to track users by storing
+# thier latest activity & hostmask. Activities include joined, parted, kicked,
+# quit, nick change, and action. If name specified is not found a pattern
+# search will be performed instead and results displayed. Script also includes
+# the ability to search for nicks by hostmask using the host parameter. As well
+# as an automatic backup system that saves on .die, restart, timed intervals,
+# and by backup trigger.
 #
-# *When no channel argument is provided statusd can default to using the current 
-# channel or to use the channel with most recent activity. Applies only to
-# status checks done in channel. See configuration section below.
-#
-# Status's tracked: Joined, Parted, Kicked, Quit, Nick Change, Spoke, and Action.
+# *Configurable options include: command trigger, backup trigger, backupfile
+# location/name, backup intervals, log backups, and use current channel.
 #
 # Initial channel setup:
 # (starts logging and enables public status command. Run in partyline.)
@@ -41,6 +38,7 @@ namespace eval statusd {
 #
 # Public command syntax:
 # !status <nick> ?channel?
+# !status host <hostmask>
 #
 # Example Usage:
 # (public)
@@ -49,6 +47,9 @@ namespace eval statusd {
 # I thought it was a great idea so I got started.
 # <lee8oi> !status lee8oi #dukelovett2
 # <dukelovett> lee8oi joined #dukelovett2 5 minutes 59 seconds ago.
+# <lee8oi> !status host *lee*
+# <dukelovett> *lee* host matches the following nicks: lee8oi
+# 
 #
 # Thanks: drsprite. This script was concieved from your suggestions & comments.
 #
@@ -108,7 +109,7 @@ variable statustext
 variable lastchan
 variable nickcase
 variable nickhost
-variable ver "0.2.3beta"
+variable ver "0.2.3"
 setudef flag statusd
 }
 bind msg n [set ::statusd::backup_trigger] ::statusd::backup_data
@@ -232,7 +233,7 @@ namespace eval statusd {
          }
       }
       if { $hostlist != "" } {      
-         set result "'${searchterm}' host matches the following nicks: $hostlist"      
+         set result "'${searchterm}' host matches the following nicks:$hostlist"      
       } else {
          set result "'${searchterm}' not found."
       }

@@ -1,9 +1,1 @@
-# Statusd is a re-imagining of Seend script that was designed to track users
-# latest status in any channels with the correct channel flag set. Users can
-# check the status of a nick in a specific channel or check for most recent
-# activity regardless of channel. If nick specified is not found the script
-# will search for the pattern in existing names. Status checks can be done in 
-# channel or query/msg. Script also includes automatic backup system that saves 
-# on .die, restart, timed intervals, and by backup trigger in msg/query.
-#
-# Status's tracked: Joined, Parted, Kicked, Quit, Nick Change, Spoke, and Action.
+Statusd is a reimagining of Seend script designed to track users by storing thier latest activity & hostmask. Activities include joined, parted, kicked, quit, nick change, and action. If name specified is not found a pattern search will be performed instead and results displayed. Script also includes the ability to search for nicks by hostmask using the host parameter. As well as an automatic backup system that saves on .die, restart, timed intervals, and by backup trigger.

@@ -216,6 +216,16 @@ namespace eval statusd {
       }
       return $result
    }
+   proc search_hosts {searchterm} {
+   variable ::statusd::nickhost
+   set hostlist [array names nickhost "${searchterm}"]
+   if { $hostlist != "" } {      
+      set result "'${searchterm}' host matches the following nicks: $hostlist"      
+   } else {
+      set result "'${searchterm}' not found."
+   }
+   return $result
+   }
    proc set_status {nick userhost channel status text} {
       set lnick [string tolower $nick]
       set lchan [string tolower $channel]
@@ -306,6 +316,9 @@ namespace eval statusd {
                #fall back to pattern search.
                set vstatus [::statusd::search_names $arg1 $arg2]
             }
+            putserv "PRIVMSG $channel :$vstatus"
+         } elseif {$larg1 == 'host' && $arg2 != ""} {
+            set vstatus [::statusd::search_hosts $arg2]
             putserv "PRIVMSG $channel :$vstatus"
          } elseif {$arg2 == "" && $arg1 != ""} {
             #no channel specified. nick only.

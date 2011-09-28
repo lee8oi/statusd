@@ -177,6 +177,7 @@ namespace eval statusd {
       # create 'array set' lines using array data.
       foreach i {status nickcase lastchan statustime statustext nickhost} {
          set tmplist "[list [array get $i]]"
+         putlog "$tmplist"
          puts $fs "array set $i $tmplist"
       }
       close $fs;

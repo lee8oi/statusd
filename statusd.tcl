@@ -138,7 +138,7 @@ if {![info exists statusd_timer_running]} {
 namespace eval statusd {
    proc restore {args} {
       # restore from file
-      if {[file exist [set ::statusd::backupfile]]} {
+      if {[file exists [set ::statusd::backupfile]]} {
          source [set ::statusd::backupfile]
       }
    }
@@ -160,23 +160,12 @@ namespace eval statusd {
    proc backup_data {args} {
       # backup to file: Write lines to file so it can
       # be sourced as a script during restore.
-      variable ::statusd::status
-      variable ::statusd::nickcase
-      variable ::statusd::lastchan
-      variable ::statusd::statustime
-      variable ::statusd::statustext
-      variable ::statusd::nickhost
       set fs [open [set ::statusd::backupfile] w+]
-      # write variable lines for loading namespace vars.
-      puts $fs "variable ::statusd::status"
-      puts $fs "variable ::statusd::nickcase"
-      puts $fs "variable ::statusd::lastchan"
-      puts $fs "variable ::statusd::statustime"
-      puts $fs "variable ::statusd::statustext"
-      puts $fs "variable ::statusd::nickhost"
-      # create 'array set' lines using array data.
-      foreach arr {status nickcase lastchan statustime statustext} {
-         puts $fs "array set $arr [list [array get $arr]]"
+      # create variable lines and 'array set' lines using array data.
+      foreach arr {status nickcase lastchan statustime statustext nickhost} {
+         set arrg "::statusd::${arr}"
+         puts $fs "variable $arrg"
+         puts $fs "array set $arr [list [array get [set arrg]]]"
       }
       close $fs;
       if {[set ::statusd::logbackups]} {

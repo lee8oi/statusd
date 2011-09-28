@@ -1,1 +1,28 @@
-Statusd is a reimagining of Seend script designed to track users by storing thier latest activity & hostmask. Activities include joined, parted, kicked, quit, nick change, and action. If name specified is not found a pattern search will be performed instead and results displayed. Script also includes the ability to search for nicks by hostmask using the host parameter. As well as an automatic backup system that saves on .die, restart, timed intervals, and by backup trigger.
+# Statusd is a reimagining of Seend script designed to track users by storing
+# thier latest activity & hostmask. Activities include joined, parted, kicked,
+# quit, nick change, and action. If name specified is not found a pattern
+# search will be performed instead and results displayed. Script also includes
+# the ability to search for nicks by hostmask using the host parameter. As well
+# as an automatic backup system that saves on .die, restart, timed intervals,
+# and by backup trigger.
+#
+# *Configurable options include: command trigger, backup trigger, backupfile
+# location/name, backup intervals, log backups, and use current channel.
+#
+# Initial channel setup:
+# (starts logging and enables public status command. Run in partyline.)
+# .chanset #channel +statusd
+#
+# Public command syntax:
+# !status <nick> ?channel?
+# !status host <hostmask>
+#
+# Example Usage:
+# (public)
+# <lee8oi> !status lee8oi
+# <dukelovett>  lee8oi spoke in #dukelovett 4 minutes 21 seconds ago. Message:
+# I thought it was a great idea so I got started.
+# <lee8oi> !status lee8oi #dukelovett2
+# <dukelovett> lee8oi joined #dukelovett2 5 minutes 59 seconds ago.
+# <lee8oi> !status host *lee*
+# <dukelovett> *lee* host matches the following nicks: lee8oi

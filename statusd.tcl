@@ -13,7 +13,7 @@ namespace eval statusd {
 # GNU General Public License for more details.
 # http://www.gnu.org/licenses/
 #
-# Statusd v0.2.5 (9.27.11)
+# Statusd v0.2.6 (9.28.11)
 # by: <lee8oiAtgmail><lee8oiOnfreenode>
 # github link: https://github.com/lee8oi/statusd/blob/master/statusd.tcl
 #
@@ -64,6 +64,10 @@ namespace eval statusd {
 #  etc). Command usage: !status host <hostmask>
 #  4.Fixed backup issue for user hostmask information.
 #  5.Rewrote backup procedure.
+#  6.Fixed Kick logger to correctly retain targets existing hostmask information.
+#  sets to 'none' if no hostmask exists. (kick event doesn't provide the
+#  target's hostmask just the hostmask of user doing the kicking. So it must
+#  be obtained from other loggers and stored.)
 # 
 # -------------------------------------------------------------------
 # Configuration:
@@ -111,7 +115,7 @@ variable statustext
 variable lastchan
 variable nickcase
 variable nickhost
-variable ver "0.2.5"
+variable ver "0.2.6"
 setudef flag statusd
 }
 bind msg n [set ::statusd::backup_trigger] ::statusd::backup_data
@@ -229,7 +233,7 @@ namespace eval statusd {
       } else {
          set result "'${searchterm}' not found."
       }
-   return $result
+      return $result
    }
    proc set_status {nick userhost channel status text} {
       set lnick [string tolower $nick]
@@ -396,7 +400,13 @@ namespace eval statusd {
    }
    proc status_logger_kick {nick userhost handle channel target reason} {
       if {[channel get $channel statusd]} {
-         ::statusd::set_status $target "none@none" $channel "Kicked" $reason
+         set ltarg [string tolower $target]
+         if {[info exists ::statusd::nickhost($ltarg)] && [set ::statusd::nickhost($ltarg)] != "none"} {
+            set curmask [set ::statusd::nickhost($ltarg)]
+         } else {
+            set curmask "none"
+         }
+         ::statusd::set_status $target $curmask $channel "Kicked" $reason
       }
    }
    proc status_logger_nick {nick userhost handle channel newnick} {

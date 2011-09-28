@@ -13,7 +13,7 @@ namespace eval statusd {
 # GNU General Public License for more details.
 # http://www.gnu.org/licenses/
 #
-# Statusd v0.2.4 (9.27.11)
+# Statusd v0.2.5 (9.27.11)
 # by: <lee8oiAtgmail><lee8oiOnfreenode>
 # github link: https://github.com/lee8oi/statusd/blob/master/statusd.tcl
 #
@@ -63,6 +63,7 @@ namespace eval statusd {
 #  specified hostmask. Normal tcl string matching characters apply (wildcards
 #  etc). Command usage: !status host <hostmask>
 #  4.Fixed backup issue for user hostmask information.
+#  5.Rewrote backup procedure.
 # 
 # -------------------------------------------------------------------
 # Configuration:
@@ -110,7 +111,7 @@ variable statustext
 variable lastchan
 variable nickcase
 variable nickhost
-variable ver "0.2.4"
+variable ver "0.2.5"
 setudef flag statusd
 }
 bind msg n [set ::statusd::backup_trigger] ::statusd::backup_data
@@ -158,8 +159,7 @@ namespace eval statusd {
       return 1
    }
    proc backup_data {args} {
-      # backup to file: Write lines to file so it can
-      # be sourced as a script during restore.
+      # backup to file
       set fs [open [set ::statusd::backupfile] w+]
       # create variable lines and 'array set' lines using array data.
       foreach arr {status nickcase lastchan statustime statustext nickhost} {

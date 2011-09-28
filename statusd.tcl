@@ -177,7 +177,7 @@ namespace eval statusd {
       # create 'array set' lines using array data.
       foreach arr {status nickcase lastchan statustime statustext nickhost} {
          set arrg "::statusd::${arr}"
-         puts $fs "array set $arr [list [array get [set arrg]]"
+         puts $fs "array set $arr [list [array get [set arrg]]]"
       }
       close $fs;
       if {[set ::statusd::logbackups]} {

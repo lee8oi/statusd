@@ -158,8 +158,7 @@ namespace eval statusd {
       return 1
    }
    proc backup_data {args} {
-      # backup to file: Write lines to file so it can
-      # be sourced as a script during restore.
+      # backup to file
       set fs [open [set ::statusd::backupfile] w+]
       # create variable lines and 'array set' lines using array data.
       foreach arr {status nickcase lastchan statustime statustext nickhost} {

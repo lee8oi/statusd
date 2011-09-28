@@ -13,7 +13,7 @@ namespace eval statusd {
 # GNU General Public License for more details.
 # http://www.gnu.org/licenses/
 #
-# Statusd v0.2.6 (9.28.11)
+# Statusd v0.2.7(9.28.11)
 # by: <lee8oiAtgmail><lee8oiOnfreenode>
 # github link: https://github.com/lee8oi/statusd/blob/master/statusd.tcl
 #
@@ -68,6 +68,8 @@ namespace eval statusd {
 #  sets to 'none' if no hostmask exists. (kick event doesn't provide the
 #  target's hostmask just the hostmask of user doing the kicking. So it must
 #  be obtained from other loggers and stored.)
+#  7.Fixed minor logging bug. Also fixed host search results to show nicks
+#  in thier proper letter case instead of all lowercase.
 # 
 # -------------------------------------------------------------------
 # Configuration:
@@ -115,7 +117,7 @@ variable statustext
 variable lastchan
 variable nickcase
 variable nickhost
-variable ver "0.2.6"
+variable ver "0.2.7"
 setudef flag statusd
 }
 bind msg n [set ::statusd::backup_trigger] ::statusd::backup_data
@@ -150,7 +152,10 @@ namespace eval statusd {
    proc prerestart {type} {
       # prerestart trigger. do backup.
       ::statusd::backup_data
-      putlog "Status Data Saved."
+      if {[set ::statusd::logbackups]} {
+         # logging is enabled.
+         putlog "Status backup performed."
+      }
    }
    proc loaded {type} {
       # bot loaded trigger do restore.
@@ -217,12 +222,14 @@ namespace eval statusd {
    }
    proc search_hosts {searchterm} {
       variable ::statusd::nickhost
+      variable ::statusd::nickcase
       set namelist [array names nickhost]
       set hostlist ""
       set elemname ""
       set elemval ""
       foreach elem $namelist {
-         set elemname $elem
+         set lelem [string tolower $elem]
+         set elemname [set nickcase($lelem)]
          set elemval $nickhost($elem)
          if {[string match $searchterm $elemval]} {
             append hostlist " " $elemname 

@@ -30,7 +30,7 @@ namespace eval statusd {
 # and by backup trigger.
 #
 # *Configuration options can be changed using the partyline command 'statusd'.
-# Configurable options include all listed in configuration section below.
+# Configurable options include all listed in configuration section.
 # 
 # Initial channel setup:
 # (starts logging and enables public status command. Run in partyline.)

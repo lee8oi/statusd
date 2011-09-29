@@ -23,7 +23,7 @@ namespace eval statusd {
 #
 # Statusd is a reimagining of Seend script designed to track users by storing
 # thier latest activity & hostmask. Activities include joined, parted, kicked,
-# quit, nick change, and action. If name specified is not found a pattern
+# quit, nick change, spoke, and action. If name specified is not found a pattern
 # search will be performed instead and results displayed. Script also includes
 # the ability to search for nicks by hostmask using the host parameter. As well
 # as an automatic backup system that saves on .die, restart, timed intervals,
@@ -321,7 +321,7 @@ namespace eval statusd {
          #no args provided.
          variable ::statusd::ver
          set pubcom [set ::statusd::trigger]
-         putserv "PRIVMSG $nick :Usage: $pubcom <nick> ?channel?"
+         putserv "PRIVMSG $nick :Usage: $pubcom <nick> ?channel? |or| $pubcom host <hostmask>"
       }
    }
    proc show_status {nick userhost handle channel text} {
@@ -376,7 +376,7 @@ namespace eval statusd {
             #no args provided.
             variable ::statusd::ver
             set pubcom [set ::statusd::trigger]
-            putserv "PRIVMSG $channel :Usage: $pubcom <nick> ?channel?"
+            putserv "PRIVMSG $channel :Usage: $pubcom <nick> ?channel? |or| $pubcom host <hostmask>"
          }
       }
    }

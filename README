@@ -1,4 +1,4 @@
-# Statusd v0.2.9(9.28.11)
+# Statusd v0.3.2(9.29.11)
 # by: <lee8oiAtgmail><lee8oiOnfreenode>
 # github link: https://github.com/lee8oi/statusd/blob/master/statusd.tcl
 #
@@ -14,10 +14,9 @@
 # as an automatic backup system that saves on .die, restart, timed intervals,
 # and by backup trigger.
 #
-# *Configuration options can now be temporarily changed using the partline
-# command 'statusd'. Configurable options include all listed in configuration
-# section below.
-#
+# *Configuration options can be changed using the partyline command 'statusd'.
+# Configurable options include all listed in configuration section below.
+# 
 # Initial channel setup:
 # (starts logging and enables public status command. Run in partyline.)
 # .chanset #channel +statusd
@@ -29,6 +28,7 @@
 # DCC command syntax:
 # (omitting value and/or option displays help)
 # .statusd set ?option? ?value?
+# .statusd ?load|store?
 #
 # Example Usage:
 # (public)
@@ -54,22 +54,9 @@
 # Thanks: drsprite. This script was concieved from your suggestions & comments.
 #
 # Updates:
-# v0.2
-#  1. Fixed channel arg to be case insensitive.
-#  2. Added new feature. If nick specified is not found script will search for 
-#  names which include the pattern. If channel arg is provided search will
-#  only look for matches in that channel.
-#  3.Added host search capability. Users can lookup which nicks match the
-#  specified hostmask. Normal tcl string matching characters apply (wildcards
-#  etc). Command usage: !status host <hostmask>
-#  4.Fixed backup issue for user hostmask information.
-#  5.Rewrote backup procedure.
-#  6.Fixed Kick logger to correctly retain targets existing hostmask information.
-#  sets to 'none' if no hostmask exists. (kick event doesn't provide the
-#  target's hostmask just the hostmask of user doing the kicking. So it must
-#  be obtained from other loggers and stored.)
-#  7.Fixed minor logging bug. Also fixed host search results to show nicks
-#  in thier proper letter case instead of all lowercase.
-#  8.Added partyline command for bot owners that allows them to temporarily
-#   change the script configuration without restarting/rehashing the bot.
-#  9.Code cleanup. Minor fixes and rearrangements.
+# v0.3
+#  1.Added configuration backup system. Script configuration settings are now
+#  saved & restored through the backup system as well as with '.statusd load'
+#  and '.statusd store' commands via dcc/partyline.
+#  2.Removed backup_trigger & its configuration options since backups can be
+#  performed via dcc/partyline. Also a couple other minor fixes.

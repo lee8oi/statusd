@@ -43,6 +43,7 @@ namespace eval statusd {
 # DCC command syntax:
 # (omitting value and/or option displays help)
 # .statusd set ?option? ?value?
+# .statusd ?load|store?
 #
 # Example Usage:
 # (public)

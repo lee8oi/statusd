@@ -13,7 +13,7 @@ namespace eval statusd {
 # GNU General Public License for more details.
 # http://www.gnu.org/licenses/
 #
-# Statusd v0.2.9(9.28.11)
+# Statusd v0.3.2(9.29.11)
 # by: <lee8oiAtgmail><lee8oiOnfreenode>
 # github link: https://github.com/lee8oi/statusd/blob/master/statusd.tcl
 #
@@ -29,10 +29,9 @@ namespace eval statusd {
 # as an automatic backup system that saves on .die, restart, timed intervals,
 # and by backup trigger.
 #
-# *Configuration options can now be temporarily changed using the partline
-# command 'statusd'. Configurable options include all listed in configuration
-# section below.
-#
+# *Configuration options can be changed using the partyline command 'statusd'.
+# Configurable options include all listed in configuration section below.
+# 
 # Initial channel setup:
 # (starts logging and enables public status command. Run in partyline.)
 # .chanset #channel +statusd
@@ -69,25 +68,13 @@ namespace eval statusd {
 # Thanks: drsprite. This script was concieved from your suggestions & comments.
 #
 # Updates:
-# v0.2
-#  1. Fixed channel arg to be case insensitive.
-#  2. Added new feature. If nick specified is not found script will search for 
-#  names which include the pattern. If channel arg is provided search will
-#  only look for matches in that channel.
-#  3.Added host search capability. Users can lookup which nicks match the
-#  specified hostmask. Normal tcl string matching characters apply (wildcards
-#  etc). Command usage: !status host <hostmask>
-#  4.Fixed backup issue for user hostmask information.
-#  5.Rewrote backup procedure.
-#  6.Fixed Kick logger to correctly retain targets existing hostmask information.
-#  sets to 'none' if no hostmask exists. (kick event doesn't provide the
-#  target's hostmask just the hostmask of user doing the kicking. So it must
-#  be obtained from other loggers and stored.)
-#  7.Fixed minor logging bug. Also fixed host search results to show nicks
-#  in thier proper letter case instead of all lowercase.
-#  8.Added partyline command for bot owners that allows them to temporarily
-#   change the script configuration without restarting/rehashing the bot.
-#  9.Code cleanup. Minor fixes and rearrangements.
+# v0.3
+#  1.Added configuration backup system. Script configuration settings are now
+#  saved & restored through the backup system as well as with '.statusd load'
+#  and '.statusd store' commands via dcc/partyline.
+#  2.Removed backup_trigger & its configuration options since backups can be
+#  performed via dcc/partyline. Also a couple other minor fixes.
+#
 # -------------------------------------------------------------------
 # Configuration:
 #
@@ -96,15 +83,14 @@ namespace eval statusd {
 variable trigger       !status
 #                     +-------+
 #
-#  *Set backup command trigger
-#     can be used in msg/query by bot owners to trigger an immediate backup.
-#                       +-------+
-variable backup_trigger  !backup
-#                       +-------+
-#
 #  *Set backupfile location/name
 #                     +--------------------------+
 variable backupfile    "scripts/statusdData.tcl"
+#                     +--------------------------+
+#
+#  *Set configfile location/name
+#                     +--------------------------+
+variable configfile    "scripts/statusdConfig.tcl"
 #                     +--------------------------+
 #
 #  *Set backup interval time (in mins)
@@ -134,10 +120,9 @@ variable statustext
 variable lastchan
 variable nickcase
 variable nickhost
-variable ver "0.2.9"
+variable ver "0.3.1"
 setudef flag statusd
 }
-bind msg n [set ::statusd::backup_trigger] ::statusd::backup_data
 bind msg - [set ::statusd::trigger] ::statusd::msg_show_status
 bind pub - [set ::statusd::trigger] ::statusd::show_status
 bind dcc n statusd ::statusd::dcc_proc
@@ -169,11 +154,35 @@ namespace eval statusd {
          putlog "Status backup performed."
       }
    }
+   proc config_load {args} {
+      if {[file exists [set ::statusd::configfile]]} {
+         source [set ::statusd::configfile]
+         bind msg - [set ::statusd::trigger] ::statusd::msg_show_status
+         bind pub - [set ::statusd::trigger] ::statusd::show_status
+         bind msg n [set ::statusd::backup_trigger] ::statusd::backup_data
+      }
+   }
+   proc config_store {args} {
+      set fs [open [set ::statusd::configfile] w+]
+      # create variable lines and 'array set' lines using array data.
+      foreach arr {trigger backup_trigger backupfile configfile interval\
+      logbackups use_current_chan} {
+         set arg "::statusd::${arr}"
+         set arg2 [set ${arg}]
+         if {[string is integer $arg2]} {
+            puts $fs "variable $arr $arg2"
+         } else {
+            puts $fs "variable $arr \"$arg2\""
+         }
+      }
+      close $fs;
+   }
    proc loaded {type} {
       # bot loaded trigger do restore.
       if {[file exists [set ::statusd::backupfile]]} {
          source [set ::statusd::backupfile]
       }
+      ::statusd::config_load
    }
    proc timer_proc {args} {
       # call self at timed intervals. do backup
@@ -191,6 +200,7 @@ namespace eval statusd {
          puts $fs "array set $arr [list [array get [set arrg]]]"
       }
       close $fs;
+      ::statusd::config_store
       if {[set ::statusd::logbackups]} {
          # logging is enabled.
          putlog "Status backup performed."
@@ -401,13 +411,21 @@ namespace eval statusd {
       set text3 [string tolower [lindex $textarr 2]]
       switch $text1 {
          "" {
-            putdcc $idx "Usage: .statusd set <option> <value>"
+            putdcc $idx "Usage: .statusd ?set|load|store?"
+         }
+         "store" {
+            ::statusd::backup_data
+            putdcc $idx "Statusd backup performed."
+         }
+         "load" {
+            ::statusd::loaded
+            putdcc $idx "Statusd configuration loaded."
          }
          "set" {
             switch $text2 {
                "" {
                   putdcc $idx "Configurable options are: trigger, \
-                  backup_trigger, backupfile, interval, logbackups,\
+                  backupfile, interval, logbackups,\
                   use_current_chan. Setting config without a value shows help.\
                   ie: '.statusd set trigger' for trigger help."
                }
@@ -421,15 +439,6 @@ namespace eval statusd {
                      putdcc $idx "Usage: .statusd set trigger <string>"
                   }
                   
-               }
-               "backup_trigger" {
-                  if {$text3 != ""} {
-                     set ::statusd::backup_trigger "$text3"
-                     bind msg n [set ::statusd::backup_trigger] ::statusd::backup_data
-                     putdcc $idx "Statusd backup_trigger changed to: $text3"
-                  } else {
-                     putdcc $idx "Usage: .statusd set backup_trigger <string>"
-                  }
                }
                "backupfile" {
                   if {$text3 != ""} {
@@ -475,7 +484,16 @@ namespace eval statusd {
                      putdcc $idx "Usage: .statusd set use_current_chan <1|0>"
                   }
                }
+               default {
+                  putdcc $idx "Configurable options are: trigger, \
+                  backupfile, interval, logbackups,\
+                  use_current_chan. Setting config without a value shows help.\
+                  ie: '.statusd set trigger' for trigger help."
+               }
             }
+         }
+         default {
+            putdcc $idx "Usage: .statusd ?set|load|store?"
          }
       }
    }

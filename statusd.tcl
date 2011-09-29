@@ -120,7 +120,7 @@ variable statustext
 variable lastchan
 variable nickcase
 variable nickhost
-variable ver "0.3.1"
+variable ver "0.3.2"
 setudef flag statusd
 }
 bind msg - [set ::statusd::trigger] ::statusd::msg_show_status

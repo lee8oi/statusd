@@ -166,7 +166,7 @@ namespace eval statusd {
    proc config_store {args} {
       set fs [open [set ::statusd::configfile] w+]
       # create variable lines and 'array set' lines using array data.
-      foreach arr {trigger backup_trigger backupfile configfile interval\
+      foreach arr {trigger backupfile configfile interval\
       logbackups use_current_chan} {
          set arg "::statusd::${arr}"
          set arg2 [set ${arg}]

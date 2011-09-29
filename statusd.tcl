@@ -13,7 +13,7 @@ namespace eval statusd {
 # GNU General Public License for more details.
 # http://www.gnu.org/licenses/
 #
-# Statusd v0.2.7(9.28.11)
+# Statusd v0.2.8(9.28.11)
 # by: <lee8oiAtgmail><lee8oiOnfreenode>
 # github link: https://github.com/lee8oi/statusd/blob/master/statusd.tcl
 #
@@ -29,8 +29,9 @@ namespace eval statusd {
 # as an automatic backup system that saves on .die, restart, timed intervals,
 # and by backup trigger.
 #
-# *Configurable options include: command trigger, backup trigger, backupfile
-# location/name, backup intervals, log backups, and use current channel.
+# *Configuration options can now be temporarily changed using the partline
+# command 'statusd'. Configurable options include all listed in configuration
+# section below.
 #
 # Initial channel setup:
 # (starts logging and enables public status command. Run in partyline.)
@@ -39,6 +40,10 @@ namespace eval statusd {
 # Public command syntax:
 # !status <nick> ?channel?
 # !status host <hostmask>
+#
+# DCC command syntax:
+# (omitting value and/or option displays help)
+# .statusd set ?option? ?value?
 #
 # Example Usage:
 # (public)
@@ -49,6 +54,16 @@ namespace eval statusd {
 # <dukelovett> lee8oi joined #dukelovett2 5 minutes 59 seconds ago.
 # <lee8oi> !status host *lee*
 # <dukelovett> *lee* host matches the following nicks: lee8oi
+#
+# (DCC/partyline)
+# <lee8oi> .statusd set
+# <dukelovett> Configurable options: trigger backup_trigger backupfile
+# interval logbackups use_current_chan. Setting config without a value shows
+# help. ie: '.statusd set trigger' for trigger help.
+# <lee8oi> .statusd set trigger
+# <dukelovett> Usage: .statusd set trigger <string>
+# <lee8oi> .statusd set trigger !seen
+# <dukelovett> Statusd trigger changed to: !seen
 # 
 #
 # Thanks: drsprite. This script was concieved from your suggestions & comments.
@@ -70,7 +85,9 @@ namespace eval statusd {
 #  be obtained from other loggers and stored.)
 #  7.Fixed minor logging bug. Also fixed host search results to show nicks
 #  in thier proper letter case instead of all lowercase.
-# 
+#  8.Added partyline command for bot owners that allows them to temporarily
+#   change the script configuration without restarting/rehashing the bot.
+#  
 # -------------------------------------------------------------------
 # Configuration:
 #
@@ -117,12 +134,13 @@ variable statustext
 variable lastchan
 variable nickcase
 variable nickhost
-variable ver "0.2.7"
+variable ver "0.2.8beta"
 setudef flag statusd
 }
 bind msg n [set ::statusd::backup_trigger] ::statusd::backup_data
 bind msg - [set ::statusd::trigger] ::statusd::msg_show_status
 bind pub - [set ::statusd::trigger] ::statusd::show_status
+bind dcc n statusd ::statusd::dcc_proc
 bind pubm - * ::statusd::status_logger_pubm
 bind sign - * ::statusd::status_logger_sign
 bind part - * ::statusd::status_logger_part
@@ -143,6 +161,91 @@ if {![info exists statusd_timer_running]} {
    set statusd_timer_running 1
 }
 namespace eval statusd {
+   proc dcc_proc {handle idx text} {
+      set textarr [split $text]
+      set text1 [string tolower [lindex $textarr 0]]
+      set text2 [string tolower [lindex $textarr 1]]
+      set text3 [string tolower [lindex $textarr 2]]
+      switch $text1 {
+         "" {
+            putdcc $idx "Usage: .statusd set <option> <value>"
+         }
+         "set" {
+            switch $text2 {
+               "" {
+                  putdcc $idx "Configurable options are: trigger, \
+                  backup_trigger, backupfile, interval, logbackups,\
+                  use_current_chan. Setting config without a value shows help.\
+                  ie: '.statusd set trigger' for trigger help."
+               }
+               "trigger" {
+                  if {$text3 != ""} {
+                     set ::statusd::trigger $text3
+                     bind msg - [set ::statusd::trigger] ::statusd::msg_show_status
+                     bind pub - [set ::statusd::trigger] ::statusd::show_status
+                     putdcc $idx "Statusd trigger changed to: $text3"
+                  } else {
+                     putdcc $idx "Usage: .statusd set trigger <string>"
+                  }
+                  
+               }
+               "backup_trigger" {
+                  if {$text3 != ""} {
+                     set ::statusd::backup_trigger "$text3"
+                     bind msg n [set ::statusd::backup_trigger] ::statusd::backup_data
+                     putdcc $idx "Statusd backup_trigger changed to: $text3"
+                  } else {
+                     putdcc $idx "Usage: .statusd set backup_trigger <string>"
+                  }
+               }
+               "backupfile" {
+                  if {$text3 != ""} {
+                     set ::statusd::backupfile "$text3"
+                     putdcc $idx "Statusd backupfile changed to: $text3"
+                  } else {
+                     putdcc $idx "Usage: .statusd set backupfile location/filename"
+                  }
+               }
+               "interval" {
+                  if {$text3 != "" && [string is integer $text3]} {
+                     if {$text3 == 1 || $text3 == 0} {
+                        set ::statusd::interval $text3
+                        putdcc $idx "Statusd interval changed to: $text3"
+                     } else {
+                        putdcc $idx "Use 1 for on. 0 for off."
+                     }
+                  } else {
+                     putdcc $idx "Usage: .statusd set interval <1|0>"
+                  }
+               }
+               "logbackups" {
+                  if {$text3 != "" && [string is integer $text3]} {
+                     if {$text3 == 1 || $text3 == 0} {
+                        set ::statusd::logbackups $text3
+                        putdcc $idx "Statusd logbackups changed to: $text3"
+                     } else {
+                        putdcc $idx "Use 1 for on. 0 for off."
+                     }
+                  } else {
+                     putdcc $idx "Usage: .statusd set logbackups <1|0>"
+                  }
+               }
+               "use_current_chan" {
+                  if {$text3 != "" && [string is integer $text3]} {
+                     if {$text3 == 1 || $text3 == 0} {
+                        set ::statusd::use_current_chan $text3
+                        putdcc $idx "Statusd use_current_chan changed to: $text3"
+                     } else {
+                        putdcc $idx "Use 1 for on. 0 for off."
+                     }
+                  } else {
+                     putdcc $idx "Usage: .statusd set use_current_chan <1|0>"
+                  }
+               }
+            }
+         }
+      }
+   }
    proc restore {args} {
       # restore from file
       if {[file exists [set ::statusd::backupfile]]} {

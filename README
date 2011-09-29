@@ -1,3 +1,11 @@
+# Statusd v0.2.8(9.28.11)
+# by: <lee8oiAtgmail><lee8oiOnfreenode>
+# github link: https://github.com/lee8oi/statusd/blob/master/statusd.tcl
+#
+# Status oriented rebuild of Seend v1.8.3
+#
+# -------------------------------------------------------------------
+#
 # Statusd is a reimagining of Seend script designed to track users by storing
 # thier latest activity & hostmask. Activities include joined, parted, kicked,
 # quit, nick change, spoke, and action. If name specified is not found a pattern
@@ -6,8 +14,10 @@
 # as an automatic backup system that saves on .die, restart, timed intervals,
 # and by backup trigger.
 #
-# *Configurable options include: command trigger, backup trigger, backupfile
-# location/name, backup intervals, log backups, and use current channel.
+# *Configuration options can be temporarily changed using the partline
+# command 'statusd'. Configurable options include: command trigger,
+# backup_trigger, backupfile location/name, backup intervals, log backups,
+# and use current channel.
 #
 # Initial channel setup:
 # (starts logging and enables public status command. Run in partyline.)
@@ -16,6 +26,10 @@
 # Public command syntax:
 # !status <nick> ?channel?
 # !status host <hostmask>
+#
+# DCC command syntax:
+# (omitting value and/or option displays help)
+# .statusd set ?option? ?value?
 #
 # Example Usage:
 # (public)
@@ -26,3 +40,36 @@
 # <dukelovett> lee8oi joined #dukelovett2 5 minutes 59 seconds ago.
 # <lee8oi> !status host *lee*
 # <dukelovett> *lee* host matches the following nicks: lee8oi
+#
+# (DCC/partyline)
+# <lee8oi> .statusd set
+# <dukelovett> Configurable options: trigger backup_trigger backupfile
+# interval logbackups use_current_chan. Setting config without a value shows
+# help. ie: '.statusd set trigger' for trigger help.
+# <lee8oi> .statusd set trigger
+# <dukelovett> Usage: .statusd set trigger <string>
+# <lee8oi> .statusd set trigger !seen
+# <dukelovett> Statusd trigger changed to: !seen
+# 
+#
+# Thanks: drsprite. This script was concieved from your suggestions & comments.
+#
+# Updates:
+# v0.2
+#  1. Fixed channel arg to be case insensitive.
+#  2. Added new feature. If nick specified is not found script will search for 
+#  names which include the pattern. If channel arg is provided search will
+#  only look for matches in that channel.
+#  3.Added host search capability. Users can lookup which nicks match the
+#  specified hostmask. Normal tcl string matching characters apply (wildcards
+#  etc). Command usage: !status host <hostmask>
+#  4.Fixed backup issue for user hostmask information.
+#  5.Rewrote backup procedure.
+#  6.Fixed Kick logger to correctly retain targets existing hostmask information.
+#  sets to 'none' if no hostmask exists. (kick event doesn't provide the
+#  target's hostmask just the hostmask of user doing the kicking. So it must
+#  be obtained from other loggers and stored.)
+#  7.Fixed minor logging bug. Also fixed host search results to show nicks
+#  in thier proper letter case instead of all lowercase.
+#  8.Added partyline command for bot owners that allows them to temporarily
+#   change the script configuration without restarting/rehashing the bot.

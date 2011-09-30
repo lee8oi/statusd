@@ -57,7 +57,7 @@ namespace eval statusd {
 #
 # (DCC/partyline)
 # <lee8oi> .statusd set
-# <dukelovett> Configurable options: trigger backup_trigger backupfile
+# <dukelovett> Configurable options: trigger backupfile
 # interval logbackups use_current_chan. Setting config without a value shows
 # help. ie: '.statusd set trigger' for trigger help.
 # <lee8oi> .statusd set trigger
@@ -160,7 +160,6 @@ namespace eval statusd {
          source [set ::statusd::configfile]
          bind msg - [set ::statusd::trigger] ::statusd::msg_show_status
          bind pub - [set ::statusd::trigger] ::statusd::show_status
-         bind msg n [set ::statusd::backup_trigger] ::statusd::backup_data
       }
    }
    proc config_store {args} {

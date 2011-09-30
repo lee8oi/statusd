@@ -26,10 +26,9 @@ namespace eval statusd {
 # quit, nick change, spoke, and action. If name specified is not found a pattern
 # search will be performed instead and results displayed. Script also includes
 # the ability to search for nicks by hostmask using the host parameter. As well
-# as an automatic backup system that saves on .die, restart, timed intervals,
-# and by backup trigger.
+# as an automatic backup system that saves on .die, restart, timed intervals.
 #
-# *Configuration options can be changed using the partyline command 'statusd'.
+# *Configuration options can be changed using the dcc command 'statusd'.
 # Configurable options include all listed in configuration section.
 # 
 # Initial channel setup:
@@ -442,8 +441,8 @@ namespace eval statusd {
                }
                "backupfile" {
                   if {$text3 != ""} {
-                     set ::statusd::backupfile "$text3"
-                     putdcc $idx "Statusd backupfile changed to: $text3"
+                     set ::statusd::backupfile "[lindex $textarr 2]"
+                     putdcc $idx "Statusd backupfile changed to: [lindex $textarr 2]"
                   } else {
                      putdcc $idx "Usage: .statusd set backupfile location/filename"
                   }

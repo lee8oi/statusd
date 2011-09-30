@@ -457,7 +457,7 @@ namespace eval statusd {
                         putdcc $idx "Use 1 for on. 0 for off."
                      }
                   } else {
-                     putdcc $idx "Usage: .statusd set interval <1|0>"
+                     putdcc $idx "Usage: .statusd set interval <integer>"
                   }
                }
                "logbackups" {

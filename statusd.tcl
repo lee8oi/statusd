@@ -450,12 +450,8 @@ namespace eval statusd {
                }
                "interval" {
                   if {$text3 != "" && [string is integer $text3]} {
-                     if {$text3 == 1 || $text3 == 0} {
-                        set ::statusd::interval $text3
-                        putdcc $idx "Statusd interval changed to: $text3"
-                     } else {
-                        putdcc $idx "Use 1 for on. 0 for off."
-                     }
+                     set ::statusd::interval $text3
+                     putdcc $idx "Statusd interval changed to: $text3"
                   } else {
                      putdcc $idx "Usage: .statusd set interval <integer>"
                   }

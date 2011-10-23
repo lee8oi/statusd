@@ -23,10 +23,11 @@ namespace eval statusd {
 #
 # Statusd is a reimagining of Seend script designed to track users by storing
 # thier latest activity & hostmask. Activities include joined, parted, kicked,
-# quit, nick change, spoke, and action. If name specified is not found a pattern
-# search will be performed instead and results displayed. Script also includes
-# the ability to search for nicks by hostmask using the host parameter. As well
-# as an automatic backup system that saves on .die, restart, timed intervals.
+# quit, nick change, spoke, and action. If status is not found script will check
+# channels nick list. If nick isn't in channel then a pattern search will be
+# performed instead and results displayed. Script also includes the ability
+# to search for nicks by hostmask using the host parameter. As well as an
+# automatic backup system that saves on .die, restart, timed intervals.
 #
 # *Configuration options can be changed using the dcc command 'statusd'.
 # Configurable options include all listed in configuration section.

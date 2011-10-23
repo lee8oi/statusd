@@ -13,7 +13,7 @@ namespace eval statusd {
 # GNU General Public License for more details.
 # http://www.gnu.org/licenses/
 #
-# Statusd v0.3.2(9.29.11)
+# Statusd v0.3.3(10.23.11)
 # by: <lee8oiAtgmail><lee8oiOnfreenode>
 # github link: https://github.com/lee8oi/statusd/blob/master/statusd.tcl
 #
@@ -74,6 +74,9 @@ namespace eval statusd {
 #  and '.statusd store' commands via dcc/partyline.
 #  2.Removed backup_trigger & its configuration options since backups can be
 #  performed via dcc/partyline. Also a couple other minor fixes.
+#  3.Script now checks if nick is in channel when a status is not found. If
+#  nick is not in channel then a pattern search will be performed and results
+#  returned.
 #
 # -------------------------------------------------------------------
 # Configuration:
@@ -120,7 +123,7 @@ variable statustext
 variable lastchan
 variable nickcase
 variable nickhost
-variable ver "0.3.2"
+variable ver "0.3.3"
 setudef flag statusd
 }
 bind msg - [set ::statusd::trigger] ::statusd::msg_show_status
@@ -243,6 +246,20 @@ namespace eval statusd {
       }
       return $result
    }
+   proc search_nicklist {nick chan} {
+      set newlist ""
+      set nicklist [split [chanlist $chan]]
+      foreach elem $nicklist {
+         if {[string match -nocase $nick $elem]} {
+            append newlist " " $elem
+         }
+      }
+      if {$newlist != "" } {
+         return "true"
+      } else {
+         return "false"
+      }
+   }
    proc search_hosts {searchterm} {
       variable ::statusd::nickhost
       variable ::statusd::nickcase
@@ -283,6 +300,7 @@ namespace eval statusd {
       set ltime [set ::statusd::statustime($lnick,$lchan)]
       set ncase [set ::statusd::nickcase($lnick)]
       set durat [duration [expr {[clock seconds] - $ltime}]]
+      set listvar [::statusd::search_nicklist $nick $channel]
       if {$lstatus == "Quit"} {
          set result "$ncase was last seen quitting $durat ago. $ltext"
       } elseif {$lstatus == "Parted"} {
@@ -297,6 +315,8 @@ namespace eval statusd {
          set result "$ncase spoke in $channel $durat ago. Message: $ltext"
       } elseif {$lstatus == "Action"} {
          set result "$ncase was seen acting in $channel $durat ago: * $ncase $ltext"
+      } elseif {$listvar != " "} {
+         set result "$nick is currently in $channel"
       } else {
          set result "Status error. Unknown status type."
       }
@@ -315,7 +335,12 @@ namespace eval statusd {
             #status available.
             set vstatus [::statusd::get_status $arg1 $arg2]
          } else {
-            set vstatus [::statusd::search_names $arg1 $arg2]
+            set listvar [::statusd::search_nicklist $arg1 $arg2]
+            if {$listvar == "true"} {
+               set vstatus "$arg1 is currently in $arg2"
+            } else {
+               set vstatus [::statusd::search_names $arg1 $arg2]
+            }
          }
          putserv "PRIVMSG $nick :$vstatus"
       } elseif {$larg1 == "host"} {
@@ -337,14 +362,16 @@ namespace eval statusd {
             #status available
             set vstatus [::statusd::get_status $arg1 $lastch]
          } else {
-            set vstatus [::statusd::search_names $arg1 ""]
+            set searchresults [::statusd::search_names $arg1 ""]
+            set vstatus "No status found. Specify a channel to check nick list.\
+             $searchresults"
          }
          putserv "PRIVMSG $nick :$vstatus"
       } else {
          #no args provided.
          variable ::statusd::ver
          set pubcom [set ::statusd::trigger]
-         putserv "PRIVMSG $nick :Usage: $pubcom <nick> ?channel? |or| $pubcom host <hostmask>"
+         putserv "PRIVMSG $nick :Usage: $pubcom <nick> <channel> |or| $pubcom host <hostmask>"
       }
    }
    proc show_status {nick userhost handle channel text} {
@@ -361,7 +388,12 @@ namespace eval statusd {
                set vstatus [::statusd::get_status $arg1 $arg2]
             } else {
                #fall back to pattern search.
-               set vstatus [::statusd::search_names $arg1 $arg2]
+               set listvar [::statusd::search_nicklist $arg1 $arg2]
+               if {$listvar == "true"} {
+                  set vstatus "$arg1 is currently in $arg2"
+               } else {
+                  set vstatus [::statusd::search_names $arg1 $arg2]
+               }
             }
             putserv "PRIVMSG $channel :$vstatus"
          } elseif {$larg1 == "host"} {
@@ -391,8 +423,12 @@ namespace eval statusd {
                #status available
                set vstatus [::statusd::get_status $arg1 $chanvar]
             } else {
-               #no status available. Do pattern search
-               set vstatus [::statusd::search_names $arg1 $chanvar]
+               set listvar [::statusd::search_nicklist $arg1 $chanvar]
+               if {$listvar == "true"} {
+                  set vstatus "$arg1 is currently in $chanvar"
+               } else {
+                  set vstatus [::statusd::search_names $arg1 $chanvar]
+               }
             }
             putserv "PRIVMSG $channel :$vstatus"
          } else {
@@ -417,7 +453,7 @@ namespace eval statusd {
             putdcc $idx "Statusd backup performed."
          }
          "load" {
-            ::statusd::loaded
+            ::statusd::loaded ""
             putdcc $idx "Statusd configuration loaded."
          }
          "set" {

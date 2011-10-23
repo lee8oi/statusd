@@ -48,7 +48,7 @@ namespace eval statusd {
 # (public)
 # <lee8oi> !status lee8oi
 # <dukelovett>  lee8oi spoke in #dukelovett 4 minutes 21 seconds ago. Message:
-# I thought it was a great idea so I got started.
+# I thought it was a great idea so I got started.tcl paste
 # <lee8oi> !status lee8oi #dukelovett2
 # <dukelovett> lee8oi joined #dukelovett2 5 minutes 59 seconds ago.
 # <lee8oi> !status host *lee*
@@ -315,8 +315,6 @@ namespace eval statusd {
          set result "$ncase spoke in $channel $durat ago. Message: $ltext"
       } elseif {$lstatus == "Action"} {
          set result "$ncase was seen acting in $channel $durat ago: * $ncase $ltext"
-      } elseif {$listvar != " "} {
-         set result "$nick is currently in $channel"
       } else {
          set result "Status error. Unknown status type."
       }

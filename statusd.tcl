@@ -244,7 +244,7 @@ namespace eval statusd {
                }
             }
             if {$newlist != ""} {
-               set result "'${searchterm}' matches from $channel: $newlist"
+               set result "'${searchterm}' matches from $channel: [lsort -unique $newlist]"
             } else {
                set result "'${searchterm}' not found."
             }

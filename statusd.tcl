@@ -87,7 +87,7 @@ namespace eval statusd {
 #  changing command trigger & configuration via partyline.
 #
 # -------------------------------------------------------------------
-# Configuration:
+# Configuration Defaults:
 #
 #  *Set command trigger
 #                     +-------+

@@ -13,7 +13,7 @@ namespace eval statusd {
 # GNU General Public License for more details.
 # http://www.gnu.org/licenses/
 #
-# Statusd v0.3.3(10.23.11)
+# Statusd v0.3.7(10.24.11)
 # by: <lee8oiAtgmail><lee8oiOnfreenode>
 # github link: https://github.com/lee8oi/statusd/blob/master/statusd.tcl
 #
@@ -78,6 +78,13 @@ namespace eval statusd {
 #  3.Script now checks if nick is in channel when a status is not found. If
 #  nick is not in channel then a pattern search will be performed and results
 #  returned.
+#  4.Fixed bug that caused nick patterns with * symbols to trigger 'currently in
+#  chan' responses.
+#  5.Modified pattern search to also search channel nick list for matching names.
+#  6.Added chancheck function to validate specified channels. This fixes a bug
+#  related to users specifying channels that the bot has not joined.
+#  7.Fixed configuration system to eliminate the extra binds leftover after
+#  changing command trigger & configuration via partyline.
 #
 # -------------------------------------------------------------------
 # Configuration:
@@ -124,11 +131,17 @@ variable statustext
 variable lastchan
 variable nickcase
 variable nickhost
-variable ver "0.3.3"
+variable ver "0.3.7"
 setudef flag statusd
+proc config_load {args} {
+      if {[file exists [set ::statusd::configfile]]} {
+         source [set ::statusd::configfile]
+      }
+      bind msg - [set ::statusd::trigger] ::statusd::msg_show_status
+      bind pub - [set ::statusd::trigger] ::statusd::show_status
+   }
 }
-bind msg - [set ::statusd::trigger] ::statusd::msg_show_status
-bind pub - [set ::statusd::trigger] ::statusd::show_status
+::statusd::config_load
 bind dcc n statusd ::statusd::dcc_proc
 bind pubm - * ::statusd::status_logger_pubm
 bind sign - * ::statusd::status_logger_sign
@@ -156,13 +169,6 @@ namespace eval statusd {
       if {[set ::statusd::logbackups]} {
          # logging is enabled.
          putlog "Status backup performed."
-      }
-   }
-   proc config_load {args} {
-      if {[file exists [set ::statusd::configfile]]} {
-         source [set ::statusd::configfile]
-         bind msg - [set ::statusd::trigger] ::statusd::msg_show_status
-         bind pub - [set ::statusd::trigger] ::statusd::show_status
       }
    }
    proc config_store {args} {
@@ -209,15 +215,28 @@ namespace eval statusd {
          putlog "Status backup performed."
       }
    }
+   proc chancheck {channel} {
+      if {[catch {channel info $channel} err]} {
+         set checkvar 0
+      } else {
+         set checkvar 1
+      }
+      return $checkvar
+   }
    proc search_names {searchterm channel} {
       variable ::statusd::nickcase
       variable ::statusd::status
       set channel [string tolower $channel]
       set lterm [string tolower $searchterm]
       set namelist [array names nickcase "\*${lterm}\*"]
-      if { $namelist != "" } {
+      if {$channel != ""} {
+         set fromchanlist [::statusd::search_nicklist "\*$searchterm\*" $channel "no"]
+      } else {
+         set fromchanlist ""
+      }
+      if { $namelist != "" || $fromchanlist != "" } {
          # names matching pattern exist.
-         set newlist ""
+         set newlist "[string trimleft $fromchanlist]"
          if {[regexp {^\#} $channel]} {
             foreach elem $namelist {
                if {[info exists status($elem,$channel)]} {
@@ -241,24 +260,30 @@ namespace eval statusd {
                set result "'${searchterm}' not found."
             }
          }
-         
       } else {
          set result "'${searchterm}' not found."
       }
       return $result
    }
-   proc search_nicklist {nick chan} {
+   proc search_nicklist {nick chan check} {
       set newlist ""
       set nicklist [split [chanlist $chan]]
+      if {$check == "yes"} {
+         set stripnick [string map {\* ""} $nick]
+      } else {
+         set stripnick $nick
+      }
       foreach elem $nicklist {
-         if {[string match -nocase $nick $elem]} {
+         if {[string match -nocase $stripnick $elem]} {
             append newlist " " $elem
          }
       }
-      if {$newlist != "" } {
-         return "true"
+      if {$check == "yes"} {
+         if {$newlist != "" } {
+            return "true"
+         }
       } else {
-         return "false"
+         return $newlist
       }
    }
    proc search_hosts {searchterm} {
@@ -301,7 +326,6 @@ namespace eval statusd {
       set ltime [set ::statusd::statustime($lnick,$lchan)]
       set ncase [set ::statusd::nickcase($lnick)]
       set durat [duration [expr {[clock seconds] - $ltime}]]
-      set listvar [::statusd::search_nicklist $nick $channel]
       if {$lstatus == "Quit"} {
          set result "$ncase was last seen quitting $durat ago. $ltext"
       } elseif {$lstatus == "Parted"} {
@@ -330,16 +354,20 @@ namespace eval statusd {
       variable ::statusd::lastchan
       if {$arg2 != "" && [regexp {^\#} $arg2]} {
          #2nd arg is channel
-         if {[info exists status($larg1,$arg2)]} {
-            #status available.
-            set vstatus [::statusd::get_status $arg1 $arg2]
-         } else {
-            set listvar [::statusd::search_nicklist $arg1 $arg2]
-            if {$listvar == "true"} {
-               set vstatus "$arg1 is currently in $arg2"
+         if {[::statusd::chancheck $arg2]} {
+            if {[info exists status($larg1,$arg2)]} {
+               #status available.
+               set vstatus [::statusd::get_status $arg1 $arg2]
             } else {
-               set vstatus [::statusd::search_names $arg1 $arg2]
+               set listvar [::statusd::search_nicklist $arg1 $arg2 "check"]
+               if {$listvar == "true"} {
+                  set vstatus "$arg1 is currently in $arg2"
+               } else {
+                  set vstatus [::statusd::search_names $arg1 $arg2]
+               }
             }
+         } else {
+            set vstatus "invalid channel"
          }
          putserv "PRIVMSG $nick :$vstatus"
       } elseif {$larg1 == "host"} {
@@ -382,17 +410,21 @@ namespace eval statusd {
          variable ::statusd::status
          if {$arg2 != "" && [regexp {^\#} $arg2]} {
             #2nd arg is channel
-            if {[info exists status($larg1,$arg2)]} {
-               #status available.
-               set vstatus [::statusd::get_status $arg1 $arg2]
-            } else {
-               #fall back to pattern search.
-               set listvar [::statusd::search_nicklist $arg1 $arg2]
-               if {$listvar == "true"} {
-                  set vstatus "$arg1 is currently in $arg2"
+            if {[::statusd::chancheck $arg2]} {
+               if {[info exists status($larg1,$arg2)]} {
+                  #status available.
+                  set vstatus [::statusd::get_status $arg1 $arg2]
                } else {
-                  set vstatus [::statusd::search_names $arg1 $arg2]
+                  #fall back to pattern search.
+                  set listvar [::statusd::search_nicklist $arg1 $arg2 "yes"]
+                  if {$listvar == "true"} {
+                     set vstatus "$arg1 is currently in $arg2"
+                  } else {
+                     set vstatus [::statusd::search_names $arg1 $arg2]
+                  }
                }
+            } else {
+               set vstatus "invalid channel"
             }
             putserv "PRIVMSG $channel :$vstatus"
          } elseif {$larg1 == "host"} {
@@ -422,7 +454,7 @@ namespace eval statusd {
                #status available
                set vstatus [::statusd::get_status $arg1 $chanvar]
             } else {
-               set listvar [::statusd::search_nicklist $arg1 $chanvar]
+               set listvar [::statusd::search_nicklist $arg1 $chanvar "yes"]
                if {$listvar == "true"} {
                   set vstatus "$arg1 is currently in $chanvar"
                } else {
@@ -465,6 +497,8 @@ namespace eval statusd {
                }
                "trigger" {
                   if {$text3 != ""} {
+                     unbind msg - [set ::statusd::trigger] ::statusd::msg_show_status
+                     unbind pub - [set ::statusd::trigger] ::statusd::show_status
                      set ::statusd::trigger $text3
                      bind msg - [set ::statusd::trigger] ::statusd::msg_show_status
                      bind pub - [set ::statusd::trigger] ::statusd::show_status
@@ -472,7 +506,6 @@ namespace eval statusd {
                   } else {
                      putdcc $idx "Usage: .statusd set trigger <string>"
                   }
-                  
                }
                "backupfile" {
                   if {$text3 != ""} {

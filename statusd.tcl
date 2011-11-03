@@ -86,6 +86,8 @@ namespace eval statusd {
 #  7.Fixed configuration system to eliminate the extra binds leftover after
 #  changing command trigger & configuration via partyline.
 #
+# Todo: Add switch to change between puthelp and putserv. Allow discreet checks.
+#
 # -------------------------------------------------------------------
 # Configuration Defaults:
 #

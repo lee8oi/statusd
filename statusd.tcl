@@ -361,7 +361,7 @@ namespace eval statusd {
                #status available.
                set vstatus [::statusd::get_status $arg1 $arg2]
             } else {
-               set listvar [::statusd::search_nicklist $arg1 $arg2 "check"]
+               set listvar [::statusd::search_nicklist $arg1 $arg2 "yes"]
                if {$listvar == "true"} {
                   set vstatus "$arg1 is currently in $arg2"
                } else {
